@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Task - Work Reminder{% endblock %}
+
+{% block extra_css %}
+<style>
+  .task-form {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+  }
+
+  .form-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--light-bg);
+  }
+
+  .form-header h3 {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .form-label {
+    font-weight: 500;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control, .form-select {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(74, 107, 255, 0.25);
+  }
+
+  .form-control::placeholder {
+    color: #adb5bd;
+  }
+
+  .form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: var(--light-bg);
+    border-radius: 8px;
+  }
+
+  .form-section h4 {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .required-field::after {
+    content: "*";
+    color: var(--danger-color);
+    margin-left: 4px;
+  }
+
+  .task-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: var(--light-bg);
+    border-radius: 8px;
+  }
+
+  .status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+
+  .status-badge.completed {
+    background-color: var(--success-color);
+    color: white;
+  }
+
+  .status-badge.pending {
+    background-color: var(--secondary-color);
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="task-form">
+            <div class="form-header">
+                <h3><i class="fas fa-edit me-2"></i>Edit Task</h3>
+            </div>
+            <form method="POST">
+                <div class="task-status">
+                    <span class="status-badge {% if task.status == 'completed' %}completed{% else %}pending{% endif %}">
+                        <i class="fas fa-{% if task.status == 'completed' %}check-circle{% else %}clock{% endif %} me-2"></i>
+                        {{ task.status|title }}
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleTaskStatus()">
+                        <i class="fas fa-sync-alt me-2"></i>Toggle Status
+                    </button>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-info-circle me-2"></i>Basic Information</h4>
+                    <div class="mb-3">
+                        <label for="titre" class="form-label required-field">Title</label>
+                        <input type="text" class="form-control" id="titre" name="titre" 
+                               value="{{ task.titre }}" placeholder="Enter task title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Enter task description (optional)">{{ task.description }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="categorie" class="form-label required-field">Category</label>
+                        <select class="form-select" id="categorie" name="categorie" required>
+                            <option value="">Select a category</option>
+                            <option value="rendez-vous" {% if task.categorie == 'rendez-vous' %}selected{% endif %}>Rendez-vous</option>
+                            <option value="faculte" {% if task.categorie == 'faculte' %}selected{% endif %}>Faculté</option>
+                            <option value="vie-quotidienne" {% if task.categorie == 'vie-quotidienne' %}selected{% endif %}>Vie quotidienne</option>
+                            <option value="custom" {% if task.categorie == 'custom' %}selected{% endif %}>Custom</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-calendar-alt me-2"></i>Date & Time</h4>
+                    <div class="mb-3">
+                        <label for="date_echeance" class="form-label required-field">Due Date</label>
+                        <input type="datetime-local" class="form-control" id="date_echeance" name="date_echeance" 
+                               value="{{ task.date_echeance.strftime('%Y-%m-%dT%H:%M') }}" required>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-bell me-2"></i>Reminders</h4>
+                    <div class="mb-3">
+                        <label for="mode_rappel" class="form-label">Reminder Mode</label>
+                        <select class="form-select" id="mode_rappel" name="mode_rappel">
+                            <option value="none" {% if task.mode_rappel == 'none' %}selected{% endif %}>No reminder</option>
+                            <option value="email" {% if task.mode_rappel == 'email' %}selected{% endif %}>Email</option>
+                            <option value="sms" {% if task.mode_rappel == 'sms' %}selected{% endif %}>SMS</option>
+                            <option value="both" {% if task.mode_rappel == 'both' %}selected{% endif %}>Both Email and SMS</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reminder_date" class="form-label">Reminder Date & Time</label>
+                        <input type="datetime-local" class="form-control" id="reminder_date" name="reminder_date"
+                               value="{% if task.reminders %}{{ task.reminders[0].date_rappel.strftime('%Y-%m-%dT%H:%M') }}{% endif %}"
+                               {% if task.mode_rappel == 'none' %}disabled{% endif %}>
+                        <div class="form-text">Select when you want to be reminded about this task</div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-sync-alt me-2"></i>Recurrence</h4>
+                    <div class="mb-3">
+                        <label for="recurrence" class="form-label">Recurrence Pattern</label>
+                        <select class="form-select" id="recurrence" name="recurrence">
+                            <option value="" {% if not task.recurrence %}selected{% endif %}>No recurrence</option>
+                            <option value="daily" {% if task.recurrence == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if task.recurrence == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if task.recurrence == 'monthly' %}selected{% endif %}>Monthly</option>
+                        </select>
+                        <div class="form-text">Select if this task repeats on a regular basis</div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <a href="{{ url_for('task.calendar') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modeRappelSelect = document.getElementById('mode_rappel');
+    const reminderDateInput = document.getElementById('reminder_date');
+
+    modeRappelSelect.addEventListener('change', function() {
+        reminderDateInput.disabled = this.value === 'none';
+        if (this.value === 'none') {
+            reminderDateInput.value = '';
+        }
+    });
+
+    // Initialize on page load
+    reminderDateInput.disabled = modeRappelSelect.value === 'none';
+
+    // Set minimum date for reminder to current date/time
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    document.getElementById("date_echeance").min = minDateTime;
+    document.getElementById("reminder_date").min = minDateTime;
+});
+
+async function toggleTaskStatus() {
+    const response = await fetch(`/task/{{ task.id }}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    
+    if (response.ok) {
+        const data = await response.json();
+        const statusBadge = document.querySelector('.status-badge');
+        const statusIcon = statusBadge.querySelector('i');
+        
+        if (data.status === 'completed') {
+            statusBadge.className = 'status-badge completed';
+            statusIcon.className = 'fas fa-check-circle me-2';
+        } else {
+            statusBadge.className = 'status-badge pending';
+            statusIcon.className = 'fas fa-clock me-2';
+        }
+        
+        statusBadge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+        statusBadge.appendChild(statusIcon);
+    }
+}
+</script>
+{% endblock %}
